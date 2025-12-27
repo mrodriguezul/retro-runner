@@ -1,0 +1,118 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.game-container {
+    text-align: center;
+    max-width: 900px;
+    width: 100%;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #f39c12;
+    text-shadow: 3px 3px 0 #c0392b;
+    margin-bottom: 20px;
+    letter-spacing: 4px;
+}
+
+#gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background: #87ceeb;
+    border: 4px solid #2c3e50;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    max-width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.restart-btn {
+    margin-top: 20px;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #fff;
+    background: #e74c3c;
+    border: 3px solid #c0392b;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.restart-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+.restart-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.restart-btn.hidden {
+    display: none;
+}
+
+.controls-info {
+    margin-top: 15px;
+    color: #bdc3c7;
+    font-size: 1rem;
+}
+
+kbd {
+    display: inline-block;
+    padding: 4px 8px;
+    background: #34495e;
+    border: 2px solid #2c3e50;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #ecf0f1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 900px) {
+    h1 {
+        font-size: 2rem;
+    }
+    
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-width: 600px) {
+    h1 {
+        font-size: 1.5rem;
+        letter-spacing: 2px;
+    }
+    
+    .restart-btn {
+        padding: 12px 30px;
+        font-size: 1rem;
+    }
+    
+    .controls-info {
+        font-size: 0.9rem;
+    }
+}
