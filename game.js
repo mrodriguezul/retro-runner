@@ -27,6 +27,9 @@ let gameState = GameState.START;
 let lastTime = 0;
 let kangaroo;
 let restartBtn;
+let obstacles = [];
+let obstacleTimer = 0;
+let obstacleSpawnInterval = 2000; // milliseconds
 
 /**
  * Initialize the game
@@ -99,6 +102,15 @@ function gameLoop(currentTime) {
 function update(deltaTime) {
     if (gameState === GameState.PLAYING) {
         kangaroo.update();
+        
+        // Update obstacles
+        updateObstacles(deltaTime);
+        
+        // Spawn new obstacles
+        spawnObstacles(deltaTime);
+        
+        // Check collisions
+        checkCollisions();
     }
 }
 
@@ -125,6 +137,9 @@ function render() {
     ctx.lineTo(canvas.width, config.groundLevel);
     ctx.stroke();
 
+    // Draw obstacles
+    obstacles.forEach(obstacle => obstacle.draw(ctx));
+    
     // Draw kangaroo
     kangaroo.draw(ctx);
 
@@ -174,7 +189,62 @@ function drawGameOverScreen() {
 function resetGame() {
     gameState = GameState.START;
     kangaroo.reset();
+    obstacles = [];
+    obstacleTimer = 0;
     restartBtn.classList.add('hidden');
+}
+
+/**
+ * Spawn obstacles at random intervals
+ */
+function spawnObstacles(deltaTime) {
+    obstacleTimer += deltaTime;
+    
+    if (obstacleTimer >= obstacleSpawnInterval) {
+        // Random obstacle type
+        const types = [ObstacleType.TREE, ObstacleType.BUSH];
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        
+        // Create new obstacle at right edge of canvas
+        const obstacle = new Obstacle(canvas.width, config.groundLevel, randomType);
+        obstacles.push(obstacle);
+        
+        // Reset timer with random interval (1.5 - 3 seconds)
+        obstacleTimer = 0;
+        obstacleSpawnInterval = 1500 + Math.random() * 1500;
+    }
+}
+
+/**
+ * Update all obstacles and remove off-screen ones
+ */
+function updateObstacles(deltaTime) {
+    // Update each obstacle
+    obstacles.forEach(obstacle => obstacle.update());
+    
+    // Remove off-screen obstacles (cleanup)
+    obstacles = obstacles.filter(obstacle => !obstacle.isOffScreen());
+}
+
+/**
+ * Check for collisions between kangaroo and obstacles
+ */
+function checkCollisions() {
+    const kangarooBox = kangaroo.getHitbox();
+    
+    for (let obstacle of obstacles) {
+        const obstacleBox = obstacle.getHitbox();
+        
+        // AABB collision detection
+        if (kangarooBox.x < obstacleBox.x + obstacleBox.width &&
+            kangarooBox.x + kangarooBox.width > obstacleBox.x &&
+            kangarooBox.y < obstacleBox.y + obstacleBox.height &&
+            kangarooBox.y + kangarooBox.height > obstacleBox.y) {
+            // Collision detected - game over
+            gameState = GameState.GAME_OVER;
+            break;
+        }
+    }
 }
 
 // Start the game when page loads
