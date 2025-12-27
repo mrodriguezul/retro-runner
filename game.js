@@ -30,6 +30,7 @@ let restartBtn;
 let obstacles = [];
 let obstacleTimer = 0;
 let obstacleSpawnInterval = 2000; // milliseconds
+let background;
 
 /**
  * Initialize the game
@@ -41,6 +42,9 @@ function init() {
 
     // Create kangaroo player
     kangaroo = new Kangaroo(100, config.groundLevel - 50);
+    
+    // Create background with parallax layers
+    background = new Background(config.canvas.width, config.canvas.height, config.groundLevel);
 
     // Setup input handlers
     setupInput();
@@ -103,6 +107,9 @@ function update(deltaTime) {
     if (gameState === GameState.PLAYING) {
         kangaroo.update();
         
+        // Update background parallax
+        background.update(6); // Match obstacle speed
+        
         // Update obstacles
         updateObstacles(deltaTime);
         
@@ -121,21 +128,8 @@ function render() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw sky background
-    ctx.fillStyle = '#87ceeb';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw ground
-    ctx.fillStyle = '#7cb342';
-    ctx.fillRect(0, config.groundLevel, canvas.width, canvas.height - config.groundLevel);
-
-    // Draw ground line
-    ctx.strokeStyle = '#558b2f';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, config.groundLevel);
-    ctx.lineTo(canvas.width, config.groundLevel);
-    ctx.stroke();
+    // Draw background with parallax layers
+    background.draw(ctx);
 
     // Draw obstacles
     obstacles.forEach(obstacle => obstacle.draw(ctx));
@@ -191,6 +185,7 @@ function resetGame() {
     kangaroo.reset();
     obstacles = [];
     obstacleTimer = 0;
+    background.reset();
     restartBtn.classList.add('hidden');
 }
 
