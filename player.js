@@ -1,60 +1,17 @@
 /**
- * Kangaroo Player Class
- * Handles player physics, jumping, and rendering
+ * Kangaroo Character Class
+ * Playable kangaroo character with unique sprite
  */
-class Kangaroo {
+class Kangaroo extends Character {
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.width = 40;
-        this.height = 50;
-        this.velocityY = 0;
-        this.gravity = 0.6;
-        this.jumpForce = -12;
-        this.isJumping = false;
-        this.groundY = y; // Remember original ground position
-        this.wasJumping = false; // Track previous jump state
-        
-        // Animation
-        this.animationFrame = 0;
-        this.animationSpeed = 0.15;
-    }
-
-    jump() {
-        // Only allow jump if kangaroo is on the ground
-        if (!this.isJumping) {
-            this.velocityY = this.jumpForce;
-            this.isJumping = true;
-        }
-    }
-
-    update() {
-        // Apply gravity
-        this.velocityY += this.gravity;
-        this.y += this.velocityY;
-
-        // Ground collision
-        if (this.y >= this.groundY) {
-            // Landing detected - create dust particles
-            if (this.wasJumping && typeof createLandingParticles === 'function') {
-                createLandingParticles(this.x, this.y);
-            }
-            
-            this.y = this.groundY;
-            this.velocityY = 0;
-            this.isJumping = false;
-        }
-        
-        // Track jump state for landing detection
-        this.wasJumping = this.isJumping;
-        
-        // Update animation frame (only when running on ground)
-        if (!this.isJumping) {
-            this.animationFrame += this.animationSpeed;
-            if (this.animationFrame >= 2) {
-                this.animationFrame = 0;
-            }
-        }
+        super(x, y, {
+            width: 40,
+            height: 50,
+            gravity: 0.6,
+            jumpForce: -12,
+            animationSpeed: 0.15,
+            name: 'Kangaroo'
+        });
     }
 
     draw(ctx) {
@@ -179,25 +136,5 @@ class Kangaroo {
         }
         
         ctx.restore();
-    }
-
-    reset() {
-        this.y = this.groundY;
-        this.velocityY = 0;
-        this.isJumping = false;
-        this.wasJumping = false;
-        this.animationFrame = 0;
-    }
-
-    // Get hitbox for collision detection
-    getHitbox() {
-        // Reduce hitbox by 20% for forgiving gameplay
-        const margin = 0.1;
-        return {
-            x: this.x + (this.width * margin),
-            y: this.y + (this.height * margin),
-            width: this.width * (1 - 2 * margin),
-            height: this.height * (1 - 2 * margin)
-        };
     }
 }
