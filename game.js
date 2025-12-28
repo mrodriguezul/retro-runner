@@ -106,7 +106,7 @@ function setupInput() {
 
     // Restart button
     restartBtn.addEventListener('click', () => {
-        resetGame(false); // Restart with same character
+        resetGame(true); // Restart with same character
     });
 }
 
