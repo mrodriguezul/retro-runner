@@ -473,7 +473,7 @@ function spawnObstacles(deltaTime, minSpawnInterval) {
     
     if (obstacleTimer >= obstacleSpawnInterval) {
         // Random obstacle type
-        const types = [ObstacleType.TREE, ObstacleType.BUSH];
+        const types = [ObstacleType.TREE, ObstacleType.BUSH, ObstacleType.RIVER, ObstacleType.ROCK, ObstacleType.FENCE];
         const randomType = types[Math.floor(Math.random() * types.length)];
         
         // Create new obstacle at right edge of canvas with current speed
