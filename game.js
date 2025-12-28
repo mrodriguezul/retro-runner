@@ -34,6 +34,10 @@ let background;
 let score = 0;
 let highScore = 0;
 let gameTime = 0;
+let gameSpeed = 6; // Base speed for obstacles
+let particles = []; // Landing dust particles
+let collisionFlash = 0; // Red flash on collision
+let newHighScorePulse = 0; // Pulse animation for new high score
 
 /**
  * Initialize the game
@@ -72,6 +76,16 @@ function setupInput() {
             e.preventDefault(); // Prevent page scroll
             handleJump();
         }
+    });
+    
+    // Touch and click support for mobile
+    canvas.addEventListener('click', () => {
+        handleJump();
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent default touch behavior
+        handleJump();
     });
 
     // Restart button
@@ -120,17 +134,35 @@ function update(deltaTime) {
         gameTime += deltaTime;
         score = Math.floor(gameTime / 100); // Score based on time survived
         
+        // Difficulty progression - increase speed every 500 points
+        gameSpeed = 6 + Math.min(Math.floor(score / 500) * 0.5, 4); // Cap at speed 10
+        
+        // Decrease spawn interval as difficulty increases
+        const minSpawnInterval = Math.max(1200, 2000 - Math.floor(score / 500) * 200);
+        
         // Update background parallax
-        background.update(6); // Match obstacle speed
+        background.update(gameSpeed);
         
         // Update obstacles
         updateObstacles(deltaTime);
         
         // Spawn new obstacles
-        spawnObstacles(deltaTime);
+        spawnObstacles(deltaTime, minSpawnInterval);
         
         // Check collisions
         checkCollisions();
+        
+        // Create landing particles
+        updateParticles(deltaTime);
+    }
+    
+    // Update visual effects
+    if (collisionFlash > 0) {
+        collisionFlash -= deltaTime;
+    }
+    
+    if (newHighScorePulse > 0) {
+        newHighScorePulse -= deltaTime;
     }
 }
 
@@ -147,8 +179,17 @@ function render() {
     // Draw obstacles
     obstacles.forEach(obstacle => obstacle.draw(ctx));
     
+    // Draw particles
+    particles.forEach(particle => particle.draw(ctx));
+    
     // Draw kangaroo
     kangaroo.draw(ctx);
+    
+    // Collision flash effect
+    if (collisionFlash > 0) {
+        ctx.fillStyle = `rgba(231, 76, 60, ${Math.min(collisionFlash / 300, 0.4)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
     
     // Draw score if playing
     if (gameState === GameState.PLAYING) {
@@ -212,9 +253,16 @@ function drawGameOverScreen() {
     // Check if new high score
     const isNewHighScore = score > highScore;
     if (isNewHighScore) {
+        // Pulse animation for new high score
+        const pulse = Math.abs(Math.sin(newHighScorePulse / 200)) * 0.3 + 1;
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2 + 40);
+        ctx.scale(pulse, pulse);
         ctx.fillStyle = '#f39c12';
         ctx.font = 'bold 24px "Courier New"';
-        ctx.fillText('★ NEW HIGH SCORE! ★', canvas.width / 2, canvas.height / 2 + 40);
+        ctx.textAlign = 'center';
+        ctx.fillText('★ NEW HIGH SCORE! ★', 0, 0);
+        ctx.restore();
     } else if (highScore > 0) {
         ctx.fillStyle = '#95a5a6';
         ctx.font = '24px "Courier New"';
@@ -241,13 +289,17 @@ function resetGame() {
     background.reset();
     score = 0;
     gameTime = 0;
+    gameSpeed = 6; // Reset speed
+    particles = []; // Clear particles
+    collisionFlash = 0;
+    newHighScorePulse = 0;
     restartBtn.classList.add('hidden');
 }
 
 /**
  * Spawn obstacles at random intervals
  */
-function spawnObstacles(deltaTime) {
+function spawnObstacles(deltaTime, minSpawnInterval) {
     obstacleTimer += deltaTime;
     
     if (obstacleTimer >= obstacleSpawnInterval) {
@@ -255,13 +307,14 @@ function spawnObstacles(deltaTime) {
         const types = [ObstacleType.TREE, ObstacleType.BUSH];
         const randomType = types[Math.floor(Math.random() * types.length)];
         
-        // Create new obstacle at right edge of canvas
+        // Create new obstacle at right edge of canvas with current speed
         const obstacle = new Obstacle(canvas.width, config.groundLevel, randomType);
+        obstacle.speed = gameSpeed; // Apply current game speed
         obstacles.push(obstacle);
         
-        // Reset timer with random interval (1.5 - 3 seconds)
+        // Reset timer with random interval (respecting minimum)
         obstacleTimer = 0;
-        obstacleSpawnInterval = 1500 + Math.random() * 1500;
+        obstacleSpawnInterval = minSpawnInterval + Math.random() * 800;
     }
 }
 
@@ -292,10 +345,12 @@ function checkCollisions() {
             kangarooBox.y + kangarooBox.height > obstacleBox.y) {
             // Collision detected - game over
             gameState = GameState.GAME_OVER;
+            collisionFlash = 500; // Trigger red flash
             
             // Update and save high score
             if (score > highScore) {
                 highScore = score;
+                newHighScorePulse = 3000; // Start pulse animation
                 localStorage.setItem('retroRunnerHighScore', highScore.toString());
             }
             break;
@@ -320,6 +375,60 @@ function drawScore() {
         ctx.fillText('HIGH: ' + highScore, canvas.width - 20, 65);
     }
     ctx.restore();
+}
+
+/**
+ * Particle class for dust effects
+ */
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.velocityX = (Math.random() - 0.5) * 3;
+        this.velocityY = -Math.random() * 2 - 1;
+        this.life = 500; // milliseconds
+        this.maxLife = 500;
+        this.size = Math.random() * 3 + 2;
+    }
+    
+    update(deltaTime) {
+        this.x += this.velocityX;
+        this.y += this.velocityY;
+        this.velocityY += 0.1; // Gravity
+        this.life -= deltaTime;
+    }
+    
+    draw(ctx) {
+        const alpha = this.life / this.maxLife;
+        ctx.fillStyle = `rgba(139, 139, 139, ${alpha * 0.6})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+/**
+ * Update and clean up particles
+ */
+function updateParticles(deltaTime) {
+    // Update all particles
+    particles.forEach(particle => particle.update(deltaTime));
+    
+    // Remove dead particles
+    particles = particles.filter(particle => !particle.isDead());
+}
+
+/**
+ * Create landing dust particles
+ */
+function createLandingParticles(x, y) {
+    for (let i = 0; i < 5; i++) {
+        particles.push(new Particle(x + Math.random() * 30, y + 50));
+    }
 }
 
 // Start the game when page loads

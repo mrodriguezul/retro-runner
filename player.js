@@ -13,6 +13,7 @@ class Kangaroo {
         this.jumpForce = -12;
         this.isJumping = false;
         this.groundY = y; // Remember original ground position
+        this.wasJumping = false; // Track previous jump state
         
         // Animation
         this.animationFrame = 0;
@@ -34,10 +35,18 @@ class Kangaroo {
 
         // Ground collision
         if (this.y >= this.groundY) {
+            // Landing detected - create dust particles
+            if (this.wasJumping && typeof createLandingParticles === 'function') {
+                createLandingParticles(this.x, this.y);
+            }
+            
             this.y = this.groundY;
             this.velocityY = 0;
             this.isJumping = false;
         }
+        
+        // Track jump state for landing detection
+        this.wasJumping = this.isJumping;
         
         // Update animation frame (only when running on ground)
         if (!this.isJumping) {
@@ -176,6 +185,7 @@ class Kangaroo {
         this.y = this.groundY;
         this.velocityY = 0;
         this.isJumping = false;
+        this.wasJumping = false;
         this.animationFrame = 0;
     }
 
