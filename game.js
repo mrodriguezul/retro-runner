@@ -31,6 +31,9 @@ let obstacles = [];
 let obstacleTimer = 0;
 let obstacleSpawnInterval = 2000; // milliseconds
 let background;
+let score = 0;
+let highScore = 0;
+let gameTime = 0;
 
 /**
  * Initialize the game
@@ -45,6 +48,12 @@ function init() {
     
     // Create background with parallax layers
     background = new Background(config.canvas.width, config.canvas.height, config.groundLevel);
+    
+    // Load high score from localStorage
+    const savedHighScore = localStorage.getItem('retroRunnerHighScore');
+    if (savedHighScore) {
+        highScore = parseInt(savedHighScore, 10);
+    }
 
     // Setup input handlers
     setupInput();
@@ -107,6 +116,10 @@ function update(deltaTime) {
     if (gameState === GameState.PLAYING) {
         kangaroo.update();
         
+        // Update game time and score
+        gameTime += deltaTime;
+        score = Math.floor(gameTime / 100); // Score based on time survived
+        
         // Update background parallax
         background.update(6); // Match obstacle speed
         
@@ -136,6 +149,11 @@ function render() {
     
     // Draw kangaroo
     kangaroo.draw(ctx);
+    
+    // Draw score if playing
+    if (gameState === GameState.PLAYING) {
+        drawScore();
+    }
 
     // Draw UI based on game state
     if (gameState === GameState.START) {
@@ -152,13 +170,26 @@ function drawStartScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 48px "Courier New"';
+    ctx.fillStyle = '#f39c12';
+    ctx.font = 'bold 56px "Courier New"';
     ctx.textAlign = 'center';
-    ctx.fillText('RETRO RUNNER', canvas.width / 2, canvas.height / 2 - 40);
-
-    ctx.font = '24px "Courier New"';
-    ctx.fillText('Press SPACE to Jump and Start!', canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText('RETRO RUNNER', canvas.width / 2, canvas.height / 2 - 60);
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = '28px "Courier New"';
+    ctx.fillText('Press SPACE to Jump and Start!', canvas.width / 2, canvas.height / 2 + 10);
+    
+    // Show high score if exists
+    if (highScore > 0) {
+        ctx.font = '20px "Courier New"';
+        ctx.fillStyle = '#f39c12';
+        ctx.fillText('HIGH SCORE: ' + highScore, canvas.width / 2, canvas.height / 2 + 50);
+    }
+    
+    // Small instructions
+    ctx.font = '16px "Courier New"';
+    ctx.fillStyle = '#bdc3c7';
+    ctx.fillText('Jump over trees and bushes!', canvas.width / 2, canvas.height - 40);
 }
 
 /**
@@ -171,7 +202,29 @@ function drawGameOverScreen() {
     ctx.fillStyle = '#e74c3c';
     ctx.font = 'bold 56px "Courier New"';
     ctx.textAlign = 'center';
-    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60);
+    
+    // Display final score
+    ctx.fillStyle = '#fff';
+    ctx.font = '32px "Courier New"';
+    ctx.fillText('SCORE: ' + score, canvas.width / 2, canvas.height / 2);
+    
+    // Check if new high score
+    const isNewHighScore = score > highScore;
+    if (isNewHighScore) {
+        ctx.fillStyle = '#f39c12';
+        ctx.font = 'bold 24px "Courier New"';
+        ctx.fillText('★ NEW HIGH SCORE! ★', canvas.width / 2, canvas.height / 2 + 40);
+    } else if (highScore > 0) {
+        ctx.fillStyle = '#95a5a6';
+        ctx.font = '24px "Courier New"';
+        ctx.fillText('High Score: ' + highScore, canvas.width / 2, canvas.height / 2 + 40);
+    }
+    
+    // Restart instruction
+    ctx.fillStyle = '#bdc3c7';
+    ctx.font = '18px "Courier New"';
+    ctx.fillText('Click RESTART GAME to play again', canvas.width / 2, canvas.height / 2 + 80);
 
     // Show restart button
     restartBtn.classList.remove('hidden');
@@ -186,6 +239,8 @@ function resetGame() {
     obstacles = [];
     obstacleTimer = 0;
     background.reset();
+    score = 0;
+    gameTime = 0;
     restartBtn.classList.add('hidden');
 }
 
@@ -237,9 +292,34 @@ function checkCollisions() {
             kangarooBox.y + kangarooBox.height > obstacleBox.y) {
             // Collision detected - game over
             gameState = GameState.GAME_OVER;
+            
+            // Update and save high score
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('retroRunnerHighScore', highScore.toString());
+            }
             break;
         }
     }
+}
+
+/**
+ * Draw current score
+ */
+function drawScore() {
+    ctx.save();
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = 'bold 28px "Courier New"';
+    ctx.textAlign = 'right';
+    ctx.fillText('SCORE: ' + score, canvas.width - 20, 40);
+    
+    // Draw high score below current score
+    if (highScore > 0) {
+        ctx.fillStyle = '#f39c12';
+        ctx.font = 'bold 20px "Courier New"';
+        ctx.fillText('HIGH: ' + highScore, canvas.width - 20, 65);
+    }
+    ctx.restore();
 }
 
 // Start the game when page loads
